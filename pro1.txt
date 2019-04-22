@@ -1,0 +1,202 @@
+from PyQt5.QtWidgets import QWidget, QPushButton, QApplication, QLabel, QLineEdit, QGridLayout, QColorDialog, QMessageBox
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import sys
+
+class Window(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        
+        self.button = QPushButton('LICZ PUNKT PRZECIĘCIA I RYSUJ WYKRES', self)
+        self.clrChoose=QPushButton('ZMIEN KOLOR', self)
+        self.podajwsp=QLabel("PODAJ WSPÓŁRZĘDNE")
+        self.punktLabel = QLabel("LOKALIZACJA PUNKTU P:", self)
+        self.button2 = QPushButton('ZAMKNIJ', self)
+ ####################################################################333              
+        self.xalabel = QLabel("Xa", self)
+        self.xaEdit = QLineEdit()
+        self.yalabel = QLabel("Ya", self)
+        self.yaEdit = QLineEdit()        
+        self.xblabel = QLabel("Xb", self)
+        self.xbEdit = QLineEdit()
+        self.yblabel = QLabel("Yb", self)
+        self.ybEdit = QLineEdit()       
+        self.xclabel = QLabel("Xc", self)
+        self.xcEdit = QLineEdit()
+        self.yclabel = QLabel("Yc", self)
+        self.ycEdit = QLineEdit()        
+        self.xdlabel = QLabel("Xd", self)
+        self.xdEdit = QLineEdit()
+        self.ydlabel = QLabel("Yd", self)
+        self.ydEdit = QLineEdit()        
+        self.xplabel = QLabel("Xp", self)
+        self.xpEdit = QLineEdit()
+        self.yplabel = QLabel("Yp", self)
+        self.ypEdit = QLineEdit()       
+        self.punktEdit = QLineEdit()         
+        self.figure=plt.figure()
+        self.canvas=FigureCanvas(self.figure)    
+##########################################################################      
+        layout =  QGridLayout(self)
+        layout.addWidget(self.xalabel, 4, 1)#zlokalizowanie "napis punkt xA"
+        layout.addWidget(self.xaEdit, 4, 2)#zlokalizowanie miejsca wprowadzenia
+        layout.addWidget(self.yalabel, 5, 1)
+        layout.addWidget(self.yaEdit, 5, 2)      
+        layout.addWidget(self.xblabel, 6, 1)
+        layout.addWidget(self.xbEdit, 6, 2)
+        layout.addWidget(self.yblabel, 7, 1)
+        layout.addWidget(self.ybEdit, 7, 2)
+        layout.addWidget(self.xclabel, 8, 1)
+        layout.addWidget(self.xcEdit, 8, 2)
+        layout.addWidget(self.yclabel, 9, 1)
+        layout.addWidget(self.ycEdit, 9, 2) 
+        layout.addWidget(self.xdlabel, 10, 1)
+        layout.addWidget(self.xdEdit, 10, 2)
+        layout.addWidget(self.ydlabel, 11, 1)
+        layout.addWidget(self.ydEdit, 11, 2)   
+        layout.addWidget(self.xplabel, 15, 1)
+        layout.addWidget(self.xpEdit, 15, 2)
+        layout.addWidget(self.yplabel, 16, 1)
+        layout.addWidget(self.ypEdit, 16, 2)
+        layout.addWidget(self.button2,39,2)            
+        layout.addWidget(self.button,2, 3, 1, 2)#przycisk liczenia
+        layout.addWidget(self.punktLabel, 1, 3, 1, 20)
+        layout.addWidget(self.punktEdit, 19, 1, 1, 20)#label gdzie jest punkt
+        layout.addWidget(self.canvas, 20,1,15,20)#polozenie wykresu
+        layout.addWidget(self.podajwsp,1,1)#wpisz wspolrzedne
+        layout.addWidget(self.clrChoose, 15, 4, 1, 2)#polozenie przysku wyboru kloru
+######################################################################       
+        self.button.clicked.connect(self.handleButton)#przypisanie sygnalu do czynnosci
+        self.clrChoose.clicked.connect(self.clrChooseF)#przypisanie sygnalu do czynnosci
+        self.button2.clicked.connect(self.koniec)#przypisanie sygnalu do czynnosci
+  ######################################################################              
+    def checkValues(self, element):#spradzenie czy dobrze wpisane wsp
+        if element.text().lstrip('-').replace('.','',1).isdigit():
+            return float(element.text())
+        else:
+            element.setFocus()
+            return None        
+ ########################################################################                   
+    def handleButton(self):
+        self.rysuj()
+##########################################################################        
+    def clrChooseF(self):#zdefiniowanie zmiany koloru
+        color=QColorDialog.getColor()
+        if color.isValid():
+            print(color.name())
+            self.rysuj(col=color.name())
+        else:
+            pass
+###########################################################################    
+    def rysuj(self, col='y'):
+        Xa = self.checkValues(self.xaEdit)
+        Ya = self.checkValues(self.yaEdit)
+        Xb = self.checkValues(self.xbEdit)
+        Yb = self.checkValues(self.ybEdit)
+        Xc = self.checkValues(self.xcEdit)
+        Yc = self.checkValues(self.ycEdit)
+        Xd = self.checkValues(self.xdEdit)
+        Yd = self.checkValues(self.ydEdit)
+        if Xa or Xb or Xc or Xd !=None and Ya or Yb or Yc or Yd != None: 
+            self.figure.clear()
+            ax = self.figure.add_subplot(111)
+            self.canvas.draw()
+        else:
+            msg_err = QMessageBox()
+            msg_err.setWindowTitle("UWAGA")
+            msg_err.setStandardButtons(QMessageBox.Ok)
+            msg_err.setText("WPROWADZONO BŁĘDNE WSPÓŁRZĘDNE!")
+            msg_err.exec_()
+            self.figure.clear()
+            self.canvas.draw()
+   
+        deltaXab = Xb - Xa
+        deltaYab = Yb - Ya
+        deltaXcd = Xd - Xc
+        deltaYcd = Yd - Yc
+        deltaXac = Xc - Xa
+        deltaYac = Yc - Ya
+        x = deltaXab*deltaYcd - deltaYab*deltaXcd                            
+        if x!= 0:
+            t1 = (deltaXac*deltaYcd - deltaYac*deltaXcd)/x
+            t2 = (deltaXac*deltaYab - deltaYac*deltaXab)/x
+            if t1>=0 and t1<=1 and t2>=0 and t2<=1:
+                xp = Xa + t1*deltaXab
+                yp = Ya + t1*deltaYab
+                a = "{0:.3f}".format(xp)
+                b = "{0:.3f}".format(yp)
+                self.xpEdit.setText(str(a))
+                self.ypEdit.setText(str(b))
+                self.punktEdit.setText(str("Pkt.P JEST NA PRZECIĘCIU ODCINÓW"))
+            elif 0 <= t1 <=1:
+                xp = Xa + t1*deltaXab
+                yp = Ya + t1*deltaYab
+                c = "{0:.3f}".format(xp)
+                d = "{0:.3f}".format(yp)
+                self.xpEdit.setText(str(c))
+                self.ypEdit.setText(str(d))
+                self.punktEdit.setText(str("Pkt.P JEST NA PRZEDŁUŻENIU ODCINKA AB"))
+                
+            elif 0 <= t2 <=1:
+                xp = Xa + t1*deltaXab
+                yp = Ya + t1*deltaYab
+                e = "{0:.3f}".format(xp)
+                f = "{0:.3f}".format(yp)
+                self.xpEdit.setText(str(e))
+                self.ypEdit.setText(str(f))
+                self.punktEdit.setText(str("Pkt.P JEST NA PRZEDŁUŻENIU ODCINKA BC"))
+            else:
+                xp = Xa + t1*deltaXab
+                yp = Ya + t1*deltaYab
+                g = "{0:.3f}".format(xp)
+                h = "{0:.3f}".format(yp)
+                self.xpEdit.setText(str(g))
+                self.ypEdit.setText(str(h))
+                self.punktEdit.setText(str("Pkt.P JEST NA PRZEDŁUŻENIU OBU ODCINKÓW"))
+        elif x == 0:
+            self.punktEdit.setText(str("ODCINKI SĄ RÓWNOLEGŁE"))
+
+        self.figure.clear() 
+        ax = self.figure.add_subplot(111)   #wykres przedstwiający odcinki i punkt przecięcia odcinkóW
+        ax.plot([yp, Yb], [xp, Xb], 'go:')
+        ax.plot([Ya, yp], [Xa, xp], 'go:')
+        ax.plot([yp, Yd], [xp, Xd], 'go:')
+        ax.plot([Yc, yp], [Xc, xp], 'go:')
+        ax.plot([Ya, Yb], [Xa, Xb], 'bo-')
+        ax.plot([Yc, Yd], [Xc, Xd], color=col, marker ='x')
+        ax.plot(yp, xp, color = 'blue', marker= 'x')        
+        ax.text(Ya, Xa, " a(" + str(Xa) +","+ str(Ya)+")", fontsize = 9, color = "blue") #wspolrzedne punktow na wykresie 
+        ax.text(Yb, Xb, " b(" + str(Xb) +","+ str(Yb)+")", fontsize = 9, color = "blue") #wspolrzedne punktow na wykresie 
+        ax.text(Yc, Xc, " c(" + str(Xc) +","+str(Yc)+")", fontsize = 9, color = "blue") #wspolrzedne punktow na wykresie 
+        ax.text(Yd, Xd, " d(" + str(Xd) +","+ str(Yd)+")", fontsize = 9, color = "blue") #wspolrzedne punktow na wykresie 
+        ax.text(yp, xp, " p(" + str(xp) +","+str(yp)+")", fontsize = 9, color = "blue") #wspolrzedne punktow na wykresie 
+        self.canvas.draw()
+        plik = open('wspolrzedne_punktow.txt','w') #zapisanie współrzędnych punktów do pliku
+        plik.write("|{:^13}|{:^13}|{:^13}|\n".format("Nazwa punktu", "X", "Y" ))
+        plik.write("|{:^13}|{:13.3f}|{:13.3f}|\n".format("A",Xa, Ya)) 
+        plik.write("|{:^13}|{:13.3f}|{:13.3f}|\n".format("B",Xb, Yb))
+        plik.write("|{:^13}|{:13.3f}|{:13.3f}|\n".format("C",Xc, Yc))
+        plik.write("|{:^13}|{:13.3f}|{:13.3f}|\n".format("D",Xd, Yd))
+        if self.xaEdit == None:
+            plik.write("|{:^13.3f}|{:^13.3f}|{:^13.3f}|\n".format("P","brak", "brak"))
+        else:
+            plik.write("|{:^13}|{:^13.3f}|{:^13.3f}|\n".format("P", xp, yp))
+        plik.close()
+########################################################################        
+    def koniec(self,event):
+        odp = QMessageBox.question(self, 
+                                   'Komunikat',  
+                                   "Czy napewno chcesz zamknąć?", 
+                                   QMessageBox.Yes | QMessageBox.No, 
+                                   QMessageBox.No 
+                                   )
+        if odp == QMessageBox.Yes:
+            sys.exit()
+if __name__ == '__main__':
+    if not QApplication.instance():
+        app=QApplication(sys.argv)
+    else:
+        app=QApplication.instance()
+    window = Window()
+    window.show()
+    sys.exit(app.exec_())
